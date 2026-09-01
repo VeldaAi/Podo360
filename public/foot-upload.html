@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foot model upload — Podo360</title>
+<script src="/i18n.js?v=66"></script>
+<style>
+ :root{--bg:#E9EEF1;--surface:#fff;--rule:#C6D2D9;--ink:#10202A;--muted:#5C7180;--accent:#0E6E7A;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,monospace}
+ *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;display:grid;place-items:center;padding:24px}
+ .card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:32px;width:100%;max-width:460px}
+ h1{margin:0 0 4px;font-size:17px}
+ p{color:var(--muted);font-size:13px;line-height:1.6;margin:8px 0 20px}
+ #drop{border:2px dashed var(--rule);border-radius:10px;padding:36px 20px;text-align:center;cursor:pointer;transition:.15s}
+ #drop.on,#drop:hover{border-color:var(--accent);background:#F2F8F9}
+ #drop b{display:block;font-size:14px;margin-bottom:6px}
+ #drop span{font:12px var(--mono);color:var(--muted)}
+ #file{display:none}
+ .row{display:flex;gap:8px;margin-top:14px}
+ input[type=password]{flex:1;padding:9px 12px;border:1px solid var(--rule);border-radius:6px;font:13px var(--mono)}
+ button{padding:9px 16px;border:0;border-radius:6px;background:var(--accent);color:#fff;font:13px var(--sans);cursor:pointer}
+ button:disabled{opacity:.5;cursor:default}
+ .lang-switch{display:flex;gap:3px;background:#EDF1F3;border-radius:999px;padding:3px;margin-bottom:16px;justify-content:center}
+ .lang-switch button{border:none;background:transparent;padding:4px 12px;border-radius:999px;cursor:pointer;font-size:.7rem;font-weight:700;color:#5C7180;font-family:var(--sans)}
+ .lang-switch button.active{background:var(--accent);color:#fff}
+ #status{margin-top:14px;font:12px/1.5 var(--mono);white-space:pre-wrap;color:var(--muted)}
+ #status.ok{color:#1B7F4D}#status.err{color:#B3261E}
+</style>
+</head>
+<body data-title-key="fuTitle">
+<div class="card">
+ <div class="lang-switch"><button data-lang="pt">PT</button><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
+ <h1 data-i18n="fuTitle">🦶 Upload foot-right.gltf</h1>
+ <p data-i18n="fuSub">Drag the real <b>foot-right.gltf</b> (14 regions) here. It replaces the placeholder model instantly — the viewer keeps working unchanged.</p>
+ <div id="drop"><b data-i18n="fuDropB">Drop the .gltf file</b><span data-i18n="fuDropSpan">or click to browse</span><input id="file" type="file" accept=".gltf,application/json"></div>
+ <div class="row">
+  <input id="token" type="password" placeholder="upload token" data-i18n-ph="fuTokenPh">
+  <button id="go" disabled data-i18n="fuUpload">Upload</button>
+ </div>
+ <div id="status"></div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const drop = $('#drop'), file = $('#file'), go = $('#go'), status = $('#status');
+let chosen = null;
+drop.addEventListener('click', () => file.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('on'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('on'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('on'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+file.addEventListener('change', () => setFile(file.files[0]));
+function setFile(f) { chosen = f; drop.querySelector('b').textContent = f.name + ' (' + (f.size/1024).toFixed(0) + ' KB)'; go.disabled = false; status.textContent = ''; }
+go.addEventListener('click', async () => {
+  if (!chosen) return;
+  go.disabled = true; status.className = ''; status.textContent = t('fuUploading');
+  try {
+    const res = await fetch('/api/upload-foot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', 'x-foot-token': $('#token').value },
+      body: chosen
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || ('HTTP ' + res.status));
+    status.className = 'ok';
+    status.textContent = '✅ ' + j.regions + ' regions · ' + (j.bytes/1024).toFixed(0) + ' KB\n' + j.note;
+  } catch (e) {
+    status.className = 'err';
+    status.textContent = '❌ ' + e.message;
+  } finally { go.disabled = false; }
+});
+</script>
+</body>
+</html>
