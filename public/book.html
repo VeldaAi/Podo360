@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podo360 — Book an Appointment</title>
+<style>
+:root{
+  --teal:#00BFA6; --indigo:#5B5FEF; --page-bg:#F4F6F9; --card:#FFFFFF; --border:#E4E9F0;
+  --text:#0B1220; --text2:#5B6B84; --text3:#8B98AC; --green:#12B76A; --green-bg:#E8FBF1;
+  --amber:#F5A524; --amber-bg:#FEF3E0; --red:#E5484D; --red-bg:#FDEAEA; --blue:#3B82F6;
+  --radius:16px; --radius-sm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Manrope','Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--text);background:linear-gradient(180deg,#F4F6F9 0%,#EDF2F9 100%);min-height:100vh}
+h1,h2,h3,h4{font-family:'Space Grotesk','Segoe UI',sans-serif}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:680px;margin:0 auto;padding:28px 18px 60px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;font-family:'Space Grotesk',sans-serif}
+.brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--indigo));display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+.lang{display:inline-flex;background:#E9EDF3;border-radius:20px;padding:3px}
+.lang button{border:none;background:transparent;padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:700;color:var(--text2)}
+.lang button.active{background:var(--text);color:#fff}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:0 2px 10px rgba(11,32,68,.04)}
+.card h2{font-size:18px;margin-bottom:4px}
+.card .sub{color:var(--text2);font-size:12.5px;margin-bottom:16px}
+.step{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--teal),var(--indigo));border-radius:20px;padding:3px 10px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--text);transition:all .15s;text-align:left}
+.chip:hover{border-color:var(--teal)}
+.chip.active{border-color:var(--teal);background:#E6FBF7;box-shadow:0 0 0 1px var(--teal)}
+.chip .meta{display:block;font-size:11px;font-weight:600;color:var(--text3);margin-top:2px}
+.chip.taken{border-color:var(--border);background:#F1F4F8;color:var(--text3);pointer-events:none;text-decoration:line-through;opacity:.6}
+.dates{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.date-chip.off{opacity:.35;pointer-events:none}
+.date-chip{flex:0 0 auto;border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:9px 13px;text-align:center;min-width:62px}
+.date-chip .dow{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase}
+.date-chip .day{font-size:18px;font-weight:800;font-family:'Space Grotesk',sans-serif}
+.date-chip .mon{font-size:11px;color:var(--text2);font-weight:700}
+.date-chip.active{border-color:var(--teal);background:#E6FBF7}
+/* Month grid calendar */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
+.month-grid .m-dow{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;text-align:center;padding:6px 0;letter-spacing:.04em}
+.month-grid .m-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1.5px solid var(--border);border-radius:12px;background:#fff;padding:10px 4px;cursor:pointer;transition:all .12s;min-height:52px}
+.month-grid .m-cell:hover{border-color:var(--teal)}
+.month-grid .m-cell.active{border-color:var(--teal);background:#E6FBF7;box-shadow:0 0 0 1px var(--teal)}
+.month-grid .m-cell.dim{opacity:.3;cursor:default;pointer-events:none}
+.month-grid .m-cell .day{font-size:17px;font-weight:800;font-family:'Space Grotesk',sans-serif;line-height:1}
+.month-grid .m-dot{width:5px;height:5px;border-radius:50%;background:var(--teal)}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11.5px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:#fff;color:var(--text);outline:none}
+.field input:focus{border-color:var(--teal)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:none;border-radius:12px;font-size:14.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--teal),var(--indigo));box-shadow:0 4px 14px rgba(0,191,166,.25)}
+.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:#fff;color:var(--text);border:1.5px solid var(--border);box-shadow:none}
+.ok{display:flex;align-items:center;gap:12px;background:var(--green-bg);border:1px solid #B9F0D3;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.ok .ico{width:38px;height:38px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ok b{display:block;font-size:14.5px}
+.ok span{font-size:12.5px;color:var(--text2)}
+.recap{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:13px;margin:14px 0}
+.recap .row{display:flex;justify-content:space-between;gap:10px;padding:5px 0}
+.recap .row b{font-weight:800}
+.err{background:var(--red-bg);border:1px solid #F5B8B9;border-radius:12px;padding:13px 15px;font-size:13px;color:var(--red);margin-bottom:14px;display:none}
+.msg{background:var(--amber-bg);border:1px solid #F6D9A8;border-radius:12px;padding:13px 15px;font-size:13px;margin-bottom:14px;display:none}
+.paybox{display:none;background:var(--card);border:1.5px dashed var(--indigo);border-radius:12px;padding:14px;margin-top:14px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="dot">🦶</div><span id="clinicName">Podo360</span></div>
+    <div class="lang">
+      <button onclick="setLang('pt')" id="lgPt" class="active">PT</button>
+      <button onclick="setLang('es')" id="lgEs">ES</button>
+      <button onclick="setLang('en')" id="lgEn">EN</button>
+    </div>
+  </div>
+
+  <div id="disabledCard" class="card hidden">
+    <h2 id="disTitle">Agendamento indisponível</h2>
+    <p class="sub" id="disSub">No momento não estamos aceitando agendamentos online. Entre em contato conosco diretamente.</p>
+  </div>
+
+  <div id="flow">
+    <div class="card" id="stepProf">
+      <span class="step" id="sp1">Passo 1</span>
+      <h2 id="tProf">Escolha o profissional</h2>
+      <p class="sub" id="sProf">Selecione quem você deseja consultar.</p>
+      <div class="chips" id="profChips"></div>
+    </div>
+
+    <div class="card hidden" id="stepSvc">
+      <span class="step" id="sp2">Passo 2</span>
+      <h2 id="tSvc">Escolha o serviço</h2>
+      <p class="sub" id="sSvc">Selecione o tipo de atendimento.</p>
+      <div class="chips" id="svcChips"></div>
+    </div>
+
+    <div class="card hidden" id="stepDate">
+      <span class="step" id="sp3">Passo 3</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+        <h2 id="tDate">Escolha o dia</h2>
+        <div style="display:flex;gap:6px">
+          <button id="prevMonthBtn" onclick="navMonth(-1)" style="border:none;background:#E9EDF3;border-radius:20px;width:32px;height:32px;font-size:16px;font-weight:700;cursor:pointer">‹</button>
+          <button id="nextMonthBtn" onclick="navMonth(1)" style="border:none;background:#E9EDF3;border-radius:20px;width:32px;height:32px;font-size:16px;font-weight:700;cursor:pointer">›</button>
+        </div>
+      </div>
+      <p class="sub" id="sDate">Disponibilidade para os próximos 14 dias.</p>
+      <div id="monthHeader" style="font-size:15px;font-weight:800;font-family:'Space Grotesk',sans-serif;margin-bottom:10px;color:var(--text)"></div>
+      <div class="dates" id="dateChips"></div>
+      <div id="slotWrap" class="hidden" style="margin-top:16px">
+        <p class="sub" id="sSlot" style="margin-bottom:10px">Horários disponíveis</p>
+        <div class="chips" id="slotChips"></div>
+        <div id="noSlots" class="msg" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="stepForm">
+      <span class="step" id="sp4">Passo 4</span>
+      <h2 id="tForm">Seus dados</h2>
+      <p class="sub" id="sForm">Preencha para confirmar o agendamento.</p>
+      <div class="err" id="formErr"></div>
+      <div class="field"><label id="lName">Nome completo</label><input id="inName" autocomplete="name"></div>
+      <div class="field"><label id="lPhone">WhatsApp / Telefone</label><input id="inPhone" type="tel" autocomplete="tel" placeholder="+55 (11) 99999-9999"></div>
+      <div class="field"><label id="lEmail">E-mail (opcional)</label><input id="inEmail" type="email" autocomplete="email"></div>
+      <div class="recap" id="recap"></div>
+      <button class="btn" id="btnConfirm" onclick="confirmBooking()">Confirmar agendamento</button>
+    </div>
+
+    <div class="card hidden" id="stepDone">
+      <div class="ok"><div class="ico">✓</div><div><b id="doneTitle">Agendamento confirmado!</b><span id="doneSub"></span></div></div>
+      <div class="recap" id="doneRecap"></div>
+      <div style="text-align:center;margin:16px 0 8px"><a id="icsLink" href="#" target="_blank" style="font-size:12.5px;color:var(--teal);text-decoration:none">📅 Adicionar ao calendário</a></div>
+      <div class="paybox" id="payBox">
+        <b id="payTitle">💳 Pagar depósito</b>
+        <p id="paySub" style="font-size:12.5px;color:var(--text2);margin:6px 0 12px">Para garantir seu horário, pague o depósito.</p>
+        <button class="btn" id="btnPay" onclick="payDeposit()">Pagar</button>
+      </div>
+      <button class="btn ghost" id="btnCancel" onclick="cancelBooking()">Cancelar agendamento</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const I18N = {
+  svcNames: {
+    'Avaliação Completa': { pt:'Avaliação Completa', es:'Evaluación Completa', en:'Full Assessment' },
+    'Consulta Podológica': { pt:'Consulta Podológica', es:'Consulta Podológica', en:'Podiatry Consultation' }
+  },
+  pt: {
+    disTitle:'Agendamento indisponível', disSub:'No momento não estamos aceitando agendamentos online. Entre em contato conosco diretamente.',
+    sp1:'Passo 1', tProf:'Escolha o profissional', sProf:'Selecione quem você deseja consultar.',
+    sp2:'Passo 2', tSvc:'Escolha o serviço', sSvc:'Selecione o tipo de atendimento.',
+    sp3:'Passo 3', tDate:'Escolha o dia', sDate:'Disponibilidade para os próximos 14 dias.',
+    sSlot:'Horários disponíveis', noSlots:'Não há horários disponíveis neste dia.',
+    sp4:'Passo 4', tForm:'Seus dados', sForm:'Preencha para confirmar o agendamento.',
+    title:'Agende uma Consulta — Podo360',
+    lName:'Nome completo', lPhone:'WhatsApp / Telefone', lEmail:'E-mail (opcional)',
+    needName:'Informe seu nome.', needPhone:'Informe um telefone para contato.',
+    confirm:'Confirmar agendamento', confirming:'Confirmando...', taking:'Horário ocupado — escolha outro.',
+    done:'Agendamento confirmado!', doneWait:'Agendamento recebido — aguardando pagamento do depósito.',
+    newPat:'Novo registro de paciente criado.', foundPat:'Encontramos seu registro — bem-vindo(a) de volta!',
+    cancel:'Cancelar agendamento', cancelled:'Agendamento cancelado.',
+    pay:'💳 Pagar depósito', paySub:'Para garantir seu horário, pague o depósito.',
+    free:'Grátis', min:'min', at:'às', with:'com'
+  },
+  es: {
+    disTitle:'Agendamiento no disponible', disSub:'Actualmente no aceptamos citas en línea. Contáctenos directamente.',
+    sp1:'Paso 1', tProf:'Elija el profesional', sProf:'Seleccione con quién desea consultar.',
+    sp2:'Paso 2', tSvc:'Elija el servicio', sSvc:'Seleccione el tipo de atención.',
+    sp3:'Paso 3', tDate:'Elija el día', sDate:'Disponibilidad para los próximos 14 días.',
+    sSlot:'Horarios disponibles', noSlots:'No hay horarios disponibles este día.',
+    sp4:'Paso 4', tForm:'Sus datos', sForm:'Complete para confirmar la cita.',
+    title:'Reserve una Cita — Podo360',
+    lName:'Nombre completo', lPhone:'WhatsApp / Teléfono', lEmail:'Correo (opcional)',
+    needName:'Ingrese su nombre.', needPhone:'Ingrese un teléfono de contacto.',
+    confirm:'Confirmar cita', confirming:'Confirmando...', taking:'Horario ocupado — elija otro.',
+    done:'¡Cita confirmada!', doneWait:'Cita recibida — esperando el pago del depósito.',
+    newPat:'Nuevo registro de paciente creado.', foundPat:'Encontramos su registro — ¡bienvenido de nuevo!',
+    cancel:'Cancelar cita', cancelled:'Cita cancelada.',
+    pay:'💳 Pagar depósito', paySub:'Para garantizar su horario, pague el depósito.',
+    free:'Gratis', min:'min', at:'a las', with:'con'
+  },
+  en: {
+    disTitle:'Booking unavailable', disSub:'We are not accepting online bookings right now. Please contact us directly.',
+    sp1:'Step 1', tProf:'Choose a professional', sProf:'Select who you would like to see.',
+    sp2:'Step 2', tSvc:'Choose a service', sSvc:'Select the type of appointment.',
+    sp3:'Step 3', tDate:'Choose a day', sDate:'Availability for the next 14 days.',
+    sSlot:'Available times', noSlots:'No times available on this day.',
+    sp4:'Step 4', tForm:'Your details', sForm:'Fill in to confirm your booking.',
+    title:'Book an Appointment — Podo360',
+    lName:'Full name', lPhone:'WhatsApp / Phone', lEmail:'Email (optional)',
+    needName:'Please enter your name.', needPhone:'Please enter a contact phone.',
+    confirm:'Confirm booking', confirming:'Confirming...', taking:'Slot taken — please pick another.',
+    done:'Your booking is confirmed!', doneWait:'Booking received — awaiting deposit payment.',
+    newPat:'New patient record created.', foundPat:'We found your record — welcome back!',
+    cancel:'Cancel booking', cancelled:'Booking cancelled.',
+    pay:'💳 Pay deposit', paySub:'To secure your slot, please pay the deposit.',
+    free:'Free', min:'min', at:'at', with:'with'
+  }
+};
+let L = I18N.pt, lang = 'pt';
+const $ = id => document.getElementById(id);
+function t(k){ return L[k] || k; }
+function tsvc(name){ const m = I18N.svcNames[name]; return m ? (m[lang] || name) : name; }
+function setLang(l){
+  lang = l; L = I18N[l] || I18N.pt;
+  document.documentElement.lang = l;
+  document.title = t('title') || 'Podo360';
+  ['lgPt','lgEs','lgEn'].forEach(id => $(id).classList.toggle('active', id === 'lg' + l[0].toUpperCase() + l.slice(1)));
+  applyText();
+}
+function applyText(){
+  Object.keys(L).forEach(k => { const el = $(k); if (el) el.textContent = L[k]; });
+  // Buttons whose ids don't match their i18n keys
+  const btnConfirm = $('btnConfirm'); if (btnConfirm) btnConfirm.textContent = t('confirm');
+  const btnPay = $('btnPay'); if (btnPay) btnPay.textContent = t('pay');
+  const btnCancel = $('btnCancel'); if (btnCancel) btnCancel.textContent = t('cancel');
+  renderSvcs();
+  if (__svcSel) { const s = __svcSel; $(`svc${s.id}`).innerHTML = esc(tsvc(s.name)) + '<span class="meta">' + s.duration_min + ' ' + t('min') + '</span>'; }
+  renderDates(); renderSlots();
+  // Re-render recap if a slot is selected
+  if (__slotSel) renderRecap();
+}
+let cfg = null, __profSel = null, __svcSel = null, __dateSel = null, __slotSel = null, __token = null, __dates = [], __summary = null, __monthStart = null;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2 = n => String(n).padStart(2, '0');
+const keyOf = d => d.getFullYear() + '-' + p2(d.getMonth()+1) + '-' + p2(d.getDate());
+const DOW = [['dom','dom','Sun'],['seg','lun','Mon'],['ter','mar','Tue'],['qua','mié','Wed'],['qui','jue','Thu'],['sex','vie','Fri'],['sáb','sáb','Sat']];
+const MON = [['jan','ene','Jan'],['fev','feb','Feb'],['mar','mar','Mar'],['abr','abr','Apr'],['mai','may','May'],['jun','jun','Jun'],['jul','jul','Jul'],['ago','ago','Aug'],['set','sep','Sep'],['out','oct','Oct'],['nov','nov','Nov'],['dez','dic','Dec']];
+
+async function boot(){
+  try {
+    const r = await fetch('/api/pub/booking');
+    const d = await r.json();
+    if (!d.enabled) { $('disabledCard').classList.remove('hidden'); $('flow').classList.add('hidden'); return; }
+    cfg = d;
+    $('clinicName').textContent = d.clinic_name || 'Podo360';
+    document.title = t('title') || 'Podo360';
+    renderPros();
+  } catch(e) { $('disabledCard').classList.remove('hidden'); $('flow').classList.add('hidden'); }
+}
+function renderPros(){
+  const el = $('profChips');
+  const pros = cfg.professionals || [];
+  if (!pros.length) {
+    el.innerHTML = '<div class="msg" style="display:block">' + (lang === 'pt' ? 'Nenhum profissional disponível no momento.' : lang === 'es' ? 'Ningún profesional disponible por ahora.' : 'No professionals available right now.') + '</div>';
+    return;
+  }
+  el.innerHTML = pros.map(p => `<button class="chip" onclick="pickProf('${esc(p.full_name)}', this)">${esc(p.full_name)}</button>`).join('');
+}
+function pickProf(name, btn){
+  __profSel = name; __svcSel = null; __dateSel = null; __slotSel = null;
+  document.querySelectorAll('#profChips .chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderSvcs();
+  $('stepSvc').classList.remove('hidden');
+  $('stepDate').classList.add('hidden'); $('stepForm').classList.add('hidden');
+}
+function renderSvcs(){
+  const el = $('svcChips');
+  el.innerHTML = (cfg.services || []).map(s => `<button class="chip${__svcSel && __svcSel.id === s.id ? ' active' : ''}" id="svc${s.id}" onclick="pickSvc(${s.id}, this)">
+    ${esc(tsvc(s.name))}<span class="meta">${s.duration_min} ${t('min')}</span></button>`).join('');
+}
+function pickSvc(id, btn){
+  __svcSel = (cfg.services || []).find(s => s.id === id) || null;
+  __dateSel = null; __slotSel = null; __summary = null;
+  document.querySelectorAll('#svcChips .chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Initialize month to current month
+  const today = new Date();
+  __monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  $('stepDate').classList.remove('hidden');
+  loadSummary();
+}
+async function navMonth(delta){
+  if (!__monthStart) return;
+  __monthStart.setMonth(__monthStart.getMonth() + delta);
+  __dateSel = null; __slotSel = null;
+  $('slotWrap').classList.add('hidden');
+  await loadSummary();
+}
+async function loadSummary(){
+  try {
+    const q = new URLSearchParams({ professional: __profSel });
+    if (__svcSel) q.set('service_id', __svcSel.id);
+    if (__monthStart) {
+      q.set('start', keyOf(__monthStart));
+      q.set('days', '31');
+    }
+    const r = await fetch('/api/pub/booking/summary?' + q.toString());
+    const d = await r.json();
+    __summary = d.days || [];
+    renderDates();
+  } catch(e) { __summary = null; renderDates(); }
+}
+function renderDates(){
+  const el = $('dateChips');
+  if (!__monthStart) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const year = __monthStart.getFullYear();
+  const month = __monthStart.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const sum = __summary || [];
+
+  // Month/year header
+  const mon = MON[month];
+  const mh = $('monthHeader');
+  if (mh) mh.textContent = (mon[lang === 'pt' ? 0 : lang === 'es' ? 1 : 2]) + ' ' + year;
+
+  // Disable prev month if showing current month
+  const prevBtn = $('prevMonthBtn');
+  if (prevBtn) {
+    const isCurrent = year === today.getFullYear() && month === today.getMonth();
+    prevBtn.disabled = isCurrent;
+    prevBtn.style.opacity = isCurrent ? '0.3' : '1';
+    prevBtn.style.cursor = isCurrent ? 'default' : 'pointer';
+  }
+
+  // DOW header row
+  const dowRow = DOW.map(d => `<div class="m-dow">${d[lang === 'pt' ? 0 : lang === 'es' ? 1 : 2]}</div>`).join('');
+
+  // Day cells
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<div></div>';
+
+  __dates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(year, month, d);
+    const key = keyOf(dt);
+    __dates.push(dt);
+    const info = sum.find(s => s.date === key);
+    const isPast = dt.getTime() < today.getTime();
+    const noSlots = info && (!info.has_slots || info.available_count === 0);
+    const off = isPast || noSlots;
+    const sel = __dateSel === key;
+    const hasDot = info && info.available_count > 0;
+    cells += `<button class="m-cell ${off ? 'dim' : ''}${sel ? ' active' : ''}" ${off ? '' : `onclick="pickDate('${key}', this)"`}>
+      <div class="day">${d}</div>${hasDot ? '<div class="m-dot"></div>' : ''}</button>`;
+  }
+
+  el.innerHTML = dowRow + cells;
+  el.className = 'month-grid';
+}
+
+async function pickDate(key, btn){
+  __dateSel = key; __slotSel = null;
+  document.querySelectorAll('#dateChips .m-cell').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  $('slotWrap').classList.remove('hidden');
+  $('slotChips').innerHTML = '<div class="sub">…</div>';
+  $('noSlots').style.display = 'none';
+  try {
+    const q = new URLSearchParams({ professional: __profSel, date: key });
+    if (__svcSel) q.set('service_id', __svcSel.id);
+    const r = await fetch('/api/pub/booking/slots?' + q.toString());
+    const d = await r.json();
+    renderSlots(d.slots || []);
+  } catch(e) { $('slotChips').innerHTML = ''; $('noSlots').textContent = e.message; $('noSlots').style.display = 'block'; }
+}
+function renderSlots(slots){
+  const el = $('slotChips');
+  if (!slots) return;
+  if (!slots.length) { el.innerHTML = ''; $('noSlots').textContent = t('noSlots'); $('noSlots').style.display = 'block'; return; }
+  $('noSlots').style.display = 'none';
+  el.innerHTML = slots.map(s => `<button class="chip${s.available ? '' : ' taken'}" ${s.available ? `onclick="pickSlot('${s.start}', this)"` : ''}>${s.start.slice(11,16)}</button>`).join('');
+}
+function renderRecap(){
+  $('recap').innerHTML =
+    `<div class="row"><span>${t('with')}</span><b>${esc(__profSel)}</b></div>` +
+    (__svcSel ? `<div class="row"><span>${esc(tsvc(__svcSel.name))}</span><b>${__svcSel.duration_min} ${t('min')}</b></div>` : '') +
+    `<div class="row"><span>${t('tDate')}</span><b>${fmtSlot(__slotSel)}</b></div>`;
+}
+function pickSlot(start, btn){
+  __slotSel = start;
+  document.querySelectorAll('#slotChips .chip:not(.taken)').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  $('stepForm').classList.remove('hidden');
+  renderRecap();
+  window.scrollTo({ top: $('stepForm').offsetTop - 20, behavior: 'smooth' });
+}
+function fmtSlot(key){
+  const d = new Date(key);
+  const dow = DOW[d.getDay()][lang === 'pt' ? 0 : lang === 'es' ? 1 : 2];
+  const mon = MON[d.getMonth()][lang === 'pt' ? 0 : lang === 'es' ? 1 : 2];
+  return `${dow} ${d.getDate()} ${mon} ${t('at')} ${key.slice(11,16)}`;
+}
+async function confirmBooking(){
+  const name = $('inName').value.trim();
+  const phone = $('inPhone').value.trim();
+  const email = $('inEmail').value.trim();
+  $('formErr').style.display = 'none';
+  if (!name) return showErr(t('needName'));
+  if (!phone) return showErr(t('needPhone'));
+  const btn = $('btnConfirm'); btn.disabled = true; btn.textContent = t('confirming');
+  try {
+    const r = await fetch('/api/pub/booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      professional: __profSel, service_id: __svcSel ? __svcSel.id : null, start_at: __slotSel, name, phone, email
+    }) });
+    const d = await r.json();
+    if (!r.ok) { showErr(d.error || r.status); btn.disabled = false; btn.textContent = t('confirm'); if (r.status === 409) { __slotSel = null; renderDates(); } return; }
+    __token = d.token;
+    showDone(d);
+  } catch(e) { showErr(e.message); btn.disabled = false; btn.textContent = t('confirm'); }
+}
+function showErr(msg){ const el = $('formErr'); el.textContent = msg; el.style.display = 'block'; }
+function showDone(d){
+  ['stepProf','stepSvc','stepDate','stepForm'].forEach(id => $(id).classList.add('hidden'));
+  $('stepDone').classList.remove('hidden');
+  $('doneTitle').textContent = d.status === 'confirmed' ? t('done') : t('doneWait');
+  $('doneSub').textContent = (d ? fmtSlot(__slotSel) : '') + ' · ' + (__svcSel ? tsvc(__svcSel.name) : '');
+  // .ics download link
+  const icsLink = $('icsLink');
+  if (icsLink && d.token) {
+    icsLink.href = '/api/pub/booking/' + d.token + '/ics';
+    icsLink.textContent = '📅 ' + (lang === 'pt' ? 'Adicionar ao calendário' : lang === 'es' ? 'Añadir al calendario' : 'Add to calendar');
+  }
+  $('doneRecap').innerHTML =
+    `<div class="row"><span>${t('with')}</span><b>${esc(__profSel)}</b></div>` +
+    (__svcSel ? `<div class="row"><span>${esc(tsvc(__svcSel.name))}</span><b>${__svcSel.duration_min} ${t('min')}</b></div>` : '') +
+    `<div class="row"><span>${t('tDate')}</span><b>${fmtSlot(__slotSel)}</b></div>` +
+    (d.deposit_required ? `<div class="row"><span>Depósito</span><b>US$ ${Number(d.deposit_usd || 0).toFixed(2)}</b></div>` : '') +
+    `<div class="row"><span></span><b style="color:var(--green)">${d.is_new_patient ? t('newPat') : t('foundPat')}</b></div>`;
+  if (d.deposit_required && d.token) {
+    $('payBox').style.display = 'block';
+    $('payTitle').textContent = t('pay');
+    $('paySub').textContent = t('paySub');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+async function payDeposit(){
+  try {
+    const r = await fetch('/api/pub/booking/' + __token + '/pay', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) { alert(d.error || 'Erro'); return; }
+    alert('Payment init: ' + JSON.stringify(d));
+  } catch(e) { alert(e.message); }
+}
+async function cancelBooking(){
+  if (!__token) return;
+  if (!confirm(t('cancel') + '?')) return;
+  try {
+    await fetch('/api/pub/booking/' + __token + '/cancel', { method: 'POST' });
+    $('doneTitle').textContent = t('cancelled');
+    $('payBox').style.display = 'none';
+    $('btnCancel').disabled = true;
+  } catch(e) {}
+}
+boot();
+</script>
+</body>
+</html>
