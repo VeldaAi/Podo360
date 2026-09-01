@@ -1,0 +1,24 @@
+# PHI / runtime data — NEVER commit
+data/
+public/uploads/
+temp/
+*.db
+*.db-wal
+*.db-shm
+
+# Python venvs
+sherpa-venv/
+.venv/
+__pycache__/
+
+# Node
+node_modules/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.log
