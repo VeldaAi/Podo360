@@ -241,8 +241,6 @@ table.tbl{width:100%;border-collapse:collapse}
 .bk-cal-appt .appt-status.attended{background:#E8F0FE;color:var(--blue)}
 .bk-cal-appt .appt-status.cancelled{background:var(--red-bg);color:var(--red)}
 .bk-cal-appt .appt-status.no_show{background:var(--amber-bg);color:var(--amber)}
-.bk-cal-appt .appt-ics{margin-left:4px;text-decoration:none;font-size:14px;cursor:pointer;opacity:.5;transition:opacity .12s}
-.bk-cal-appt .appt-ics:hover{opacity:1}
 .bk-cal-appt .appt-status.booking{background:#EDE7F6;color:#7C4DFF}
 .bk-cal-empty{padding:20px 0;text-align:center;color:var(--text3);font-size:12.5px}
 
@@ -1198,7 +1196,6 @@ table.tbl{width:100%;border-collapse:collapse}
             <div class="f-field"><label data-i18n="agendaEnd">Fim</label><input id="apptEnd" type="datetime-local" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px"></div>
             <div class="f-field full"><label data-i18n="agendaNotes">Observações</label><textarea id="apptNotes" rows="2" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px"></textarea></div>
             <div id="apptBookingInfo" class="full" style="font-size:12px;color:var(--text3);background:#F1F4F8;border-radius:8px;padding:8px 10px;display:none"></div>
-      <div style="margin-top:8px;text-align:right"><a id="apptIcsLink" href="#" target="_blank" style="font-size:11.5px;color:var(--teal);text-decoration:none;display:none">📅 .ics</a></div>
           </div>
           <div id="apptMsg" style="margin-top:10px"></div>
           <div class="form-foot">
@@ -2144,16 +2141,6 @@ async function editAppt(id){
         info.style.display = 'block';
         info.textContent = (a.source === 'online' ? '🌐 ' + t('agendaOnline') : t('agendaStaff')) + (a.booking_name ? ' · ' + a.booking_name : '') + (a.booking_phone ? ' · ' + a.booking_phone : '') + (a.deposit_status && a.deposit_status !== 'none' ? ' · 💳 ' + a.deposit_status : '');
       } else info.style.display = 'none';
-    }
-    // .ics link
-    const icsLink = $('#apptIcsLink');
-    if (icsLink) {
-      if (a.booking_token && a.start_at) {
-        icsLink.href = '/api/pub/booking/' + a.booking_token + '/ics';
-        icsLink.style.display = 'inline';
-      } else {
-        icsLink.style.display = 'none';
-      }
     }
     try {
       const pros = await api('/api/professionals');
@@ -6660,7 +6647,6 @@ function bkCalSelectDay(dateStr){
       '<span class="appt-patient">' + esc(name) + '</span>' +
       '<span class="appt-prof">' + esc(prof + svc) + '</span>' +
       '<span class="appt-status ' + (a.status || 'confirmed') + '">' + statLabel(a.status || 'confirmed') + '</span>' +
-      (a.booking_token ? '<a class="appt-ics" href="/api/pub/booking/' + encodeURIComponent(a.booking_token) + '/ics" target="_blank" title="Exportar .ics" onclick="event.stopPropagation()">📅</a>' : '') +
     '</div>';
   }).join('');
   detail.style.display = 'block';
