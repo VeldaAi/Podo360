@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foot model — region map</title>
+<script src="/js/three.min.js"></script>
+<script src="/i18n.js"></script>
+<style>
+ :root{
+ --bg:#E9EEF1; --surface:#FFFFFF; --rule:#C6D2D9; --ink:#10202A;
+ --muted:#5C7180; --accent:#0E6E7A; --accent-soft:#DDEAEC;
+ --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ }
+ *{box-sizing:border-box}
+ html,body{height:100%;margin:0}
+ body{
+ background:var(--bg);color:var(--ink);font-family:var(--sans);
+ display:grid;grid-template-columns:minmax(0,1fr) 340px;
+ }
+ @media (max-width:820px){ body{grid-template-columns:1fr;grid-template-rows:52vh minmax(0,1fr)} }
+
+ /* ---------- stage ---------- */
+ #stage{position:relative;min-height:0}
+ canvas{display:block;width:100%;height:100%;touch-action:none}
+ #hint{
+ position:absolute;left:16px;bottom:14px;font:11px/1.5 var(--mono);
+ letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+ }
+ #drop{
+ position:absolute;inset:0;display:none;place-items:center;text-align:center;
+ background:var(--bg);padding:32px;
+ }
+ #drop.on{display:grid}
+ #drop p{max-width:34ch;color:var(--muted);font-size:14px;line-height:1.6}
+ #drop b{display:block;color:var(--ink);font-size:16px;margin-bottom:8px}
+ #drop label{
+ display:inline-block;margin-top:14px;padding:9px 16px;border:1px solid var(--accent);
+ color:var(--accent);border-radius:2px;font-size:13px;cursor:pointer;
+ }
+ #drop input{display:none}
+
+ /* ---------- panel ---------- */
+ #panel{
+ background:var(--surface);border-left:1px solid var(--rule);
+ display:flex;flex-direction:column;min-height:0;
+ }
+ @media (max-width:820px){ #panel{border-left:0;border-top:1px solid var(--rule)} }
+ header{padding:18px 20px 14px;border-bottom:1px solid var(--rule)}
+ header h1{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+ header span{display:block;margin-top:3px;font:11px/1.4 var(--mono);color:var(--muted);letter-spacing:.05em}
+ .lang-switch{display:flex;gap:3px;background:#EDF1F3;border-radius:999px;padding:3px;margin-bottom:12px;justify-content:center}
+ .lang-switch button{border:none;background:transparent;padding:4px 12px;border-radius:999px;cursor:pointer;font-size:.7rem;font-weight:700;color:#5C7180;font-family:var(--sans)}
+ .lang-switch button.active{background:var(--accent);color:#fff}
+
+ #list{overflow-y:auto;flex:1;min-height:0}
+ .row{
+ display:flex;align-items:center;gap:10px;width:100%;padding:9px 20px;
+ border:0;border-bottom:1px solid #EDF1F3;background:none;text-align:left;
+ font:13px var(--sans);color:var(--ink);cursor:pointer;
+ }
+ .row:hover{background:#F4F8F9}
+ .row[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+ .row .sw{width:9px;height:9px;border-radius:50%;flex:none}
+ .row .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .row .v{font:11px var(--mono);color:var(--muted)}
+ .row .v.set{color:var(--ink);font-weight:600}
+
+ #detail{border-top:1px solid var(--rule);padding:16px 20px;background:#FBFCFD}
+ #detail h2{margin:0 0 2px;font-size:14px}
+ #detail .id{font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+ #detail ul{margin:10px 0 0;padding-left:16px;color:var(--muted);font-size:12px;line-height:1.65}
+ .slider{display:flex;align-items:center;gap:10px;margin-top:14px}
+ .slider input{flex:1;accent-color:var(--accent)}
+ .slider output{font:13px var(--mono);width:2ch;text-align:right}
+ .ramp{display:flex;height:5px;margin-top:8px;border-radius:3px;overflow:hidden}
+ .ramp i{flex:1}
+ footer{display:flex;gap:8px;padding:12px 20px;border-top:1px solid var(--rule)}
+ footer button{
+ flex:1;padding:9px;border:1px solid var(--rule);background:var(--surface);
+ border-radius:2px;font:12px var(--sans);color:var(--ink);cursor:pointer;
+ }
+ footer button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+ @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body data-title-key="fmModelTitle">
+<div id="stage">
+ <div id="hint" data-i18n="fmHint">drag to rotate · scroll to zoom · tap a region</div>
+ <div id="drop">
+ <div><p><b data-i18n="fmDropB">Load the model</b><span data-i18n="fmDropP">Open this page from the same folder as
+ <code>foot-right.gltf</code> and <code>foot-regions.json</code>, or pick the
+ .gltf file below.</span></p>
+ <label data-i18n="fmChoose">Choose foot-right.gltf<input id="file" type="file" accept=".gltf,application/json"></label>
+ </div>
+ </div>
+</div>
+
+<div id="panel">
+ <header>
+ <div class="lang-switch"><button data-lang="pt">PT</button><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
+ <h1 data-i18n="fmModelTitle">Right foot — region map</h1>
+ <span id="stats" data-i18n="fmLoading">loading</span>
+ </header>
+ <div id="list"></div>
+ <div id="detail">
+ <div class="id" id="d-id" data-i18n="fmNoSel">no region selected</div>
+ <h2 id="d-label" data-i18n="fmTap">Tap the model or a row</h2>
+ <div class="slider">
+ <input id="pain" type="range" min="0" max="10" step="1" value="0" disabled>
+ <output id="pain-val">0</output>
+ </div>
+ <div class="ramp" id="ramp"></div>
+ <ul id="d-cond"></ul>
+ </div>
+ <footer>
+ <button id="clear" data-i18n="fmClear">Clear all</button>
+ <button id="export" class="primary" data-i18n="fmCopy">Copy pain map JSON</button>
+ </footer>
+</div>
+
+<script>
+/* ── Podo360 3D Foot Map viewer — Velda AI ──
+   Loads foot-right.gltf (14 anatomical regions), orbit + tap-to-select,
+   per-region pain 0–10, exports pain-map JSON. */
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const REGION_ORDER = [
+    'hallux','lesser_toes','metatarsal_heads','dorsum_forefoot','medial_arch',
+    'medial_border','lateral_border','dorsum_midfoot','heel_plantar','achilles_heel',
+    'medial_malleolus','lateral_malleolus','ankle_anterior','lower_leg'
+  ];
+  const SKIN = 0.878 * 255, SKIN2 = 0.702 * 255, SKIN3 = 0.588 * 255;
+  const pain = {};            // region -> 0..10
+  let meshByRegion = {}, labelByRegion = {}, colorByRegion = {};
+  let selected = null, renderer, scene, camera, controls;
+
+  /* ── GLTF parse (r128 core — no loader addons) ── */
+  function parseGltf(json) {
+    const binU8 = base64ToU8(json.buffers[0].uri);
+    const views = json.bufferViews.map(v => {
+      const off = v.byteOffset || 0;
+      return binU8.subarray(off, off + v.byteLength);
+    });
+    const acc = json.accessors.map(a => {
+      const view = views[a.bufferView];
+      switch (a.componentType) {
+        case 5126: return new Float32Array(view.buffer, view.byteOffset, a.count * (a.type === 'VEC3' ? 3 : 1));
+        case 5123: return new Uint16Array(view.buffer, view.byteOffset, a.count);
+        default: throw new Error('componentType ' + a.componentType);
+      }
+    });
+    const mats = json.materials.map(m => ({
+      region: m.extras.region, label: m.extras.label, color: m.extras.highlightColor
+    }));
+    const out = [];
+    for (const mesh of json.meshes) {
+      for (const prim of mesh.primitives) {
+        const region = prim.extras.region;
+        const pos = acc[prim.attributes.POSITION];
+        const nor = acc[prim.attributes.NORMAL];
+        const idx = acc[prim.indices];
+        const color = mats[prim.material].color;
+        out.push({ region, label: mats[prim.material].label, color, pos, nor, idx });
+      }
+    }
+    return { parts: out, meta: json.asset.extras || {} };
+  }
+  function base64ToU8(uri) {
+    const b64 = uri.slice(uri.indexOf(',') + 1);
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+
+  /* ── three.js scene ── */
+  function buildScene(parts) {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xE9EEF1);
+    camera = new THREE.PerspectiveCamera(40, 1, 0.01, 10);
+    camera.position.set(0.34, 0.22, 0.42);
+    camera.lookAt(0, 0.07, 0.12);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0xC9D6DC, 0.85);
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(0.5, 0.8, 0.6);
+    const fill = new THREE.DirectionalLight(0xbfd8e0, 0.35);
+    fill.position.set(-0.6, 0.2, -0.4);
+    scene.add(hemi, key, fill);
+
+    const center = new THREE.Vector3(0, 0.075, 0.12);
+    const geomCache = new Map();
+    for (const p of parts) {
+      let geom = geomCache.get(p.region);
+      if (!geom) {
+        geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(p.pos, 3));
+        geom.setAttribute('normal', new THREE.BufferAttribute(p.nor, 3));
+        geom.setIndex(new THREE.BufferAttribute(p.idx, 1));
+        geom.computeBoundingSphere();
+        geomCache.set(p.region, geom);
+      }
+      const color = new THREE.Color(p.color);
+      const mat = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(SKIN / 255, SKIN2 / 255, SKIN3 / 255),
+        emissive: new THREE.Color(0x000000),
+        specular: new THREE.Color(0x222222), shininess: 14,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.userData.region = p.region;
+      mesh.userData.highlight = color;
+      scene.add(mesh);
+      meshByRegion[p.region] = mesh;
+      labelByRegion[p.region] = p.label;
+      colorByRegion[p.region] = p.color;
+    }
+    scene.userData.center = center;
+  }
+
+  /* ── orbit controls (custom — drag rotate, wheel/pinch zoom) ── */
+  function initControls(canvas) {
+    const c = { yaw: 0.72, pitch: -0.16, dist: 0.62, target: new THREE.Vector3(0, 0.075, 0.12) };
+    let dragging = false, px = 0, py = 0, pinch0 = null, downT = 0, downXY = null;
+
+    function apply() {
+      const cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+      camera.position.set(
+        c.target.x + c.dist * cp * Math.sin(c.yaw),
+        c.target.y + c.dist * sp,
+        c.target.z + c.dist * cp * Math.cos(c.yaw));
+      camera.lookAt(c.target);
+    }
+    function setDist(d) { c.dist = Math.max(0.2, Math.min(1.6, d)); apply(); }
+
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId);
+      px = e.clientX; py = e.clientY; downXY = [e.clientX, e.clientY]; downT = Date.now();
+      if (e.pointerType === 'touch') {
+        if (!pinch0) pinch0 = { d: 0, dist: c.dist };
+      } else dragging = true;
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (dragging) {
+        c.yaw -= (e.clientX - px) * 0.007;
+        c.pitch = Math.max(-1.2, Math.min(1.2, c.pitch + (e.clientY - py) * 0.007));
+        apply();
+      }
+      px = e.clientX; py = e.clientY;
+    });
+    canvas.addEventListener('pointerup', e => {
+      const moved = downXY && Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]);
+      if (moved < 6 && Date.now() - downT < 600) pick(e);
+      dragging = false;
+      if (e.pointerType === 'touch') pinch0 = null;
+    });
+    canvas.addEventListener('wheel', e => { e.preventDefault(); setDist(c.dist * (1 + Math.sign(e.deltaY) * 0.1)); }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length === 2 && pinch0) {
+        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        if (!pinch0.d) pinch0.d = d;
+        setDist(pinch0.dist * (pinch0.d / d));
+      }
+    }, { passive: true });
+    apply();
+  }
+
+  /* ── picking ── */
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  function pick(e) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(scene.children.filter(o => o.isMesh));
+    if (hits.length) select(hits[0].object.userData.region);
+  }
+  function select(region) {
+    if (selected) {
+      const m = meshByRegion[selected];
+      if (m) { m.material.emissive.setHex(0x000000); m.material.color.setRGB(SKIN / 255, SKIN2 / 255, SKIN3 / 255); }
+    }
+    selected = region;
+    if (region && meshByRegion[region]) {
+      const m = meshByRegion[region];
+      m.material.emissive.copy(m.userData.highlight).multiplyScalar(0.38);
+      m.material.color.copy(m.userData.highlight).lerp(new THREE.Color(SKIN / 255, SKIN2 / 255, SKIN3 / 255), 0.55);
+    }
+    // list sync
+    document.querySelectorAll('.row').forEach(r => r.setAttribute('aria-selected', r.dataset.region === region ? 'true' : 'false'));
+    // detail sync
+    if (region) {
+      $('#d-id').textContent = region;
+      $('#d-label').textContent = labelByRegion[region] || region;
+      $('#pain').disabled = false;
+      $('#pain').value = pain[region] || 0;
+      $('#pain-val').textContent = pain[region] || 0;
+    } else {
+      $('#d-id').textContent = t('fmNoSel');
+      $('#d-label').textContent = t('fmTap');
+      $('#pain').disabled = true;
+      $('#pain').value = 0; $('#pain-val').textContent = '0';
+    }
+    render();
+  }
+
+  /* ── render loop ── */
+  function render() { if (renderer) renderer.render(scene, camera); }
+
+  /* ── UI wiring ── */
+  function buildList() {
+    const list = $('#list');
+    list.innerHTML = '';
+    for (const r of REGION_ORDER) {
+      if (!meshByRegion[r]) continue;
+      const btn = document.createElement('button');
+      btn.className = 'row'; btn.dataset.region = r;
+      btn.innerHTML = `<span class="sw" style="background:${colorByRegion[r]}"></span><span class="n">${labelByRegion[r]}</span><span class="v" data-v></span>`;
+      btn.addEventListener('click', () => select(r));
+      list.appendChild(btn);
+    }
+    $('#stats').textContent = t('fmStats', { n: REGION_ORDER.filter(r => meshByRegion[r]).length });
+  }
+  function refreshList() {
+    document.querySelectorAll('.row').forEach(r => {
+      const v = r.querySelector('.v');
+      const val = pain[r.dataset.region] || 0;
+      v.textContent = val ? val + '/10' : '';
+      v.classList.toggle('set', !!val);
+    });
+  }
+  function rampHTML() {
+    const colors = ['#3FA97A', '#8FBF52', '#E8B33C', '#E0803F', '#D94F6A', '#9B2C3F'];
+    return colors.map(c => `<i style="background:${c}"></i>`).join('');
+  }
+
+  $('#pain').addEventListener('input', e => {
+    const val = +e.target.value;
+    $('#pain-val').textContent = val;
+    if (selected) { pain[selected] = val; refreshList(); }
+  });
+  $('#clear').addEventListener('click', () => {
+    Object.keys(pain).forEach(k => delete pain[k]);
+    refreshList();
+    if (selected) { $('#pain').value = 0; $('#pain-val').textContent = '0'; }
+  });
+  $('#export').addEventListener('click', () => {
+    const out = {
+      side: 'right', footLength_m: 0.2686, updatedAt: new Date().toISOString(),
+      regions: REGION_ORDER.reduce((o, r) => { if (pain[r]) o[r] = pain[r]; return o; }, {})
+    };
+    navigator.clipboard.writeText(JSON.stringify(out, null, 1))
+      .then(() => { $('#export').textContent = t('fmCopied'); setTimeout(() => $('#export').textContent = t('fmCopy'), 1400); })
+      .catch(() => { $('#export').textContent = t('fmCopyFailed'); });
+  });
+
+  /* ── boot ── */
+  function boot(parts) {
+    buildScene(parts);
+    const canvas = document.createElement('canvas');
+    $('#stage').appendChild(canvas);
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const resize = () => {
+      const w = $('#stage').clientWidth, h = $('#stage').clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      render();
+    };
+    new ResizeObserver(resize).observe($('#stage'));
+    resize();
+    initControls(canvas);
+    buildList();
+    $('#ramp').innerHTML = rampHTML();
+    $('#drop').classList.remove('on');
+    select(null);
+    render();
+  }
+
+  async function loadFrom(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      boot(parseGltf(await res.json()).parts);
+      $('#stats').textContent = $('#stats').textContent + ' · ' + url.split('/').pop();
+    } catch (err) {
+      $('#stats').textContent = t('fmLoadFailed') + err.message;
+      $('#drop').classList.add('on');
+    }
+  }
+  $('#file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { try { boot(parseGltf(JSON.parse(rd.result)).parts); } catch (err) { alert(t('fmInvalid') + err.message); } };
+    rd.readAsText(f);
+  });
+
+  loadFrom('/foot-right.gltf');
+})();
+</script>
+</body>
+</html>
